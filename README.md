@@ -12,8 +12,8 @@ decision tables, and the 9 GoF design patterns.
 | M3 | Payment Processing & Delivery Tracking | Factory Method, Adapter, Observer |
 
 ## Stack
-Java 21 · Spring Boot 3 · Spring Data JPA · Spring Security + JWT · PostgreSQL
-(local dev falls back to in-memory H2). Frontend (later): React 18 + Vite + TS + Tailwind.
+Java 21 · Spring Boot 3 · Spring Data JPA · Spring Security + JWT · Spring WebSocket (STOMP)
+· PostgreSQL (local dev falls back to in-memory H2). Frontend: React 18 + Vite + TS + Tailwind.
 
 ## Prerequisites
 - JDK 21+. The Maven wrapper `./mvnw` is included — no Maven install needed.
@@ -68,7 +68,33 @@ curl "localhost:8080/api/restaurants?loc=Kuala%20Lumpur&cuisine=Malay&rating=4"
 curl localhost:8080/api/restaurants/1/menu
 ```
 
+## Module 2 & 3 endpoints
+`$TOKEN` is the JWT from the login call above (sent as `Authorization: Bearer $TOKEN`).
+```bash
+# Add to cart (DT-M2-1) — quantity validated 1..20
+curl -X POST localhost:8080/api/cart/items -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"menuItemId":1,"quantity":2}'
+
+# Place order / checkout (DT-M2-2) — empty-cart & missing-address are rejected
+curl -X POST localhost:8080/api/checkout -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"address":"12 Jalan Ampang, KL"}'
+
+# Pay (DT-M3-1) — token drives the demo: any token approves; tok_declined / tok_timeout
+curl -X POST localhost:8080/api/payments -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"orderId":1,"token":"tok_ok","amount":42.50}'
+
+# Track delivery (DT-M3-2) — live GPS also streams over WS to /topic/order/{id}
+curl localhost:8080/api/deliveries/1
+```
+
 ## Status
-- ✅ **M1** — Auth (Singleton + Strategy + JWT, lock-after-5, duplicate-email) and
-  Browsing (Proxy 60s cache, closed-restaurant + no-results handling).
-- ⏳ M2, M3, frontend, deploy — in progress.
+- ✅ **M1 — Auth & Browsing** — Singleton + Strategy + JWT (lock-after-5, duplicate-email);
+  Proxy 60s cache with closed-restaurant + no-results handling (DT-M1-1..3).
+- ✅ **M2 — Cart & Order** — Builder + Facade + State; quantity 1..20 guard, empty-cart /
+  missing-address / out-of-stock checks, and the order-lifecycle state machine (DT-M2-1, DT-M2-2).
+- ✅ **M3 — Payment & Delivery** — Factory Method + Adapter + Observer; five payment outcomes
+  (approved / declined / invalid / timeout / not-payable) and live GPS pushed every 10s over
+  WebSocket, with the order advancing CONFIRMED → OUT_FOR_DELIVERY → DELIVERED (DT-M3-1, DT-M3-2).
+- ✅ **Frontend** — React 18 + Vite + TS + Tailwind: full Login → Browse → Menu → Cart →
+  Checkout → Payment → live Tracking journey, plus admin & driver consoles.
+- ⏳ Deployment (live URL) — pending.
