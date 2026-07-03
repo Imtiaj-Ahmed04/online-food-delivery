@@ -48,3 +48,50 @@ class PasswordAuthStrategy implements AuthenticationStrategy {
         if (user.getFailedAttempts() >= MAX_ATTEMPTS) {                      // C4 = N → R5
             user.lockFor(LOCK_MINUTES);                                      // A4 (lock 15 min)
             userRepo.save(user);
+            return AuthResult.fail("ACCOUNT_LOCKED",
+                    "Too many attempts — account locked for 15 minutes.");
+        }
+        userRepo.save(user);
+        return AuthResult.fail("BAD_CREDENTIALS", "Incorrect email or password"); // R4 → A3
+    }
+}
+
+/**
+ * Concrete Strategy #2 — OAuth 2.0 (SDD Final Project). Provisions the user on
+ * first verified login; swappable at runtime via AuthService.setStrategy().
+ */
+@Component
+class OAuthStrategy implements AuthenticationStrategy {
+
+    private final OAuthClient oauth;
+
+    OAuthStrategy(OAuthClient oauth) {
+        this.oauth = oauth;
+    }
+
+    @Override
+    public AuthResult authenticate(AuthRequest c) {
+        OAuthClient.OAuthProfile p = oauth.exchangeCodeForProfile(c.getOauthCode());
+        if (p == null || !p.emailVerified())
+            return AuthResult.fail("OAUTH_FAILED", "OAuth verification failed");
+        return AuthResult.success(User.fromOAuth(p));
+    }
+}
+
+/** Port to an external OAuth provider; StubOAuthClient ships for completeness. */
+interface OAuthClient {
+
+    OAuthProfile exchangeCodeForProfile(String code);
+
+    record OAuthProfile(String email, boolean emailVerified, String name) {
+    }
+}
+
+@Component
+class StubOAuthClient implements OAuthClient {
+
+    @Override
+    public OAuthProfile exchangeCodeForProfile(String code) {
+        return null;   // provider not configured in this build
+    }
+}
