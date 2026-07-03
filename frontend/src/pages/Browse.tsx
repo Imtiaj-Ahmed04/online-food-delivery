@@ -63,3 +63,63 @@ export default function Browse() {
               placeholder="Search a location — try “Kuala Lumpur”"
               value={loc}
               onChange={(e) => setLoc(e.target.value)}
+            />
+          </div>
+        </div>
+      </section>
+
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        {CUISINES.map((c) => (
+          <button key={c} className={cuisine === c ? 'chip-on' : 'chip-off'} onClick={() => setCuisine(c)}>
+            {c !== 'All' && art(c).e} {c}
+          </button>
+        ))}
+        <span className="mx-1 h-6 w-px bg-ink-200" />
+        {RATINGS.map((r) => (
+          <button key={r.value} className={minRating === r.value ? 'chip-on' : 'chip-off'} onClick={() => setMinRating(r.value)}>
+            {r.value > 0 && '★'} {r.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton h-60" />)}
+        </div>
+      ) : list.length === 0 ? (
+        <EmptyState icon="🔍" title="No restaurants found" note={message ?? 'Try widening your search or clearing the filters.'} />
+      ) : (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((r) => (
+            <Link
+              key={r.id}
+              to={`/restaurants/${r.id}`}
+              className={cx('card group overflow-hidden transition hover:-translate-y-1 hover:shadow-glow', !r.isOpen && 'opacity-90')}
+            >
+              <div className={cx('relative flex h-28 items-center justify-center bg-gradient-to-br text-5xl', art(r.cuisine).g)}>
+                <span className="drop-shadow">{art(r.cuisine).e}</span>
+                <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-ink-800 shadow-sm">
+                  <Stars rating={r.rating} />
+                </span>
+                {!r.isOpen && (
+                  <span className="absolute left-3 top-3 rounded-full bg-ink-900/80 px-2.5 py-1 text-xs font-bold text-white">Closed</span>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-ink-900 group-hover:text-brand-600">{r.name}</h3>
+                <p className="mt-0.5 text-sm text-ink-500">{r.cuisine} · {r.location}</p>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 text-xs font-bold">
+                    <span className={r.isOpen ? 'text-emerald-600' : 'text-ink-400'}>{r.isOpen ? '● Open' : '○ Closed'}</span>
+                    <span className="font-semibold text-ink-400">· 🕒 ~{etaMin(r.id)} min</span>
+                  </span>
+                  <span className="text-sm font-bold text-brand-600">View menu →</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
