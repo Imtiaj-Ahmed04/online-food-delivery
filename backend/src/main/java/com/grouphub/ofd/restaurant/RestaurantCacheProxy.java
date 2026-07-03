@@ -70,3 +70,44 @@ class RestaurantService implements IRestaurantService {
     private static boolean equalsIgnoreCase(String field, String q) {
         return field != null && field.equalsIgnoreCase(q);
     }
+}
+
+/** «Proxy» — 60s TTL cache in front of the real service (holds search P99 < 300 ms). */
+@Service
+@Primary
+public class RestaurantCacheProxy implements IRestaurantService {
+
+    private static final Logger log = LoggerFactory.getLogger(RestaurantCacheProxy.class);
+    private static final long TTL_MS = 60_000;
+
+    private final RestaurantService real;                          // UML: -realService
+    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+
+    public RestaurantCacheProxy(RestaurantService real) {
+        this.real = real;
+    }
+
+    @Override
+    public List<RestaurantDTO> searchRestaurants(String loc, String cuisine, double rating) {
+        String key = norm(loc) + "|" + norm(cuisine) + "|" + rating;
+        CacheEntry hit = cache.get(key);
+        if (hit != null && !hit.isExpired()) {                     // DT-M1-3 C1: cache hit?
+            log.debug("CACHE HIT — key={}", key);
+            return hit.data();                                     // R1 → A1
+        }
+        List<RestaurantDTO> fresh = real.searchRestaurants(loc, cuisine, rating); // miss → A2
+        cache.put(key, new CacheEntry(fresh, System.currentTimeMillis()));
+        return fresh;
+    }
+
+    @Override
+    public List<MenuItemDTO> getMenuItems(long restaurantId) {
+        return real.getMenuItems(restaurantId);                   // menus change rarely — direct
+    }
+
+    private static String norm(String s) { return s == null ? "" : s.trim().toLowerCase(); }
+
+    private record CacheEntry(List<RestaurantDTO> data, long storedAt) {
+        boolean isExpired() { return System.currentTimeMillis() - storedAt > TTL_MS; }
+    }
+}
