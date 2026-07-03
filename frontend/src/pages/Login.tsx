@@ -58,3 +58,54 @@ export default function Login() {
 
         <form onSubmit={submit} className="card space-y-4 p-6">
           <div>
+            <label className="label">Email</label>
+            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" required />
+          </div>
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="label">Password</label>
+              <button
+                type="button"
+                onClick={() => toast('info', 'Password reset isn’t available in this demo — use a quick demo login below.')}
+                className="mb-1.5 text-xs font-semibold text-brand-600 hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+          </div>
+
+          {offerReg && (
+            <div className="rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-700">
+              No account with that email. <Link to="/register" className="font-bold underline">Create one →</Link>
+            </div>
+          )}
+
+          <button className="btn-primary w-full" disabled={busy}>
+            {busy ? <Spinner light /> : 'Sign in'}
+          </button>
+
+          <div className="pt-1">
+            <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-ink-400">Quick demo login</p>
+            <div className="grid grid-cols-3 gap-2">
+              {DEMO.map((d) => (
+                <button
+                  key={d.label}
+                  type="button"
+                  onClick={() => { setEmail(d.email); setPassword(d.password) }}
+                  className="chip-off justify-center py-2 text-xs"
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </form>
+
+        <p className="mt-5 text-center text-sm text-ink-500">
+          New to FoodHub? <Link to="/register" className="font-bold text-brand-600 hover:underline">Create an account</Link>
+        </p>
+      </div>
+    </div>
+  )
+}
