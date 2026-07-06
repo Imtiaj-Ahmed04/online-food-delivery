@@ -98,3 +98,4 @@ curl localhost:8080/api/deliveries/1
 - ✅ **Frontend** — React 18 + Vite + TS + Tailwind: full Login → Browse → Menu → Cart →
   Checkout → Payment → live Tracking journey, plus admin & driver consoles.
 - ⏳ Deployment (live URL) — pending.
+. 
