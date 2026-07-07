@@ -3,7 +3,7 @@ import type { Cart, DeliveryStatus, MenuItem, OrderSummary, Restaurant, User, Ap
 
 export const TOKEN_KEY = 'ofd_token'
 
-const api = axios.create({ baseURL: 'https://your-backend-api-url.com/api' })
+const api = axios.create({ baseURL: 'http://localhost:8080/api' })
 
 api.interceptors.request.use((cfg) => {
   const t = localStorage.getItem(TOKEN_KEY)
